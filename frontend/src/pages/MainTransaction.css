@@ -1,0 +1,6 @@
+.income { color: green; font-weight: bold; }
+.expense { color: red; font-weight: bold; }
+.total { color: black; font-weight: bold;}
+.summary {
+    font-size: 18px;
+}

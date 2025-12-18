@@ -1,0 +1,62 @@
+.calculator-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.calculator-box {
+  background: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  width: 260px;
+}
+
+.calculator-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+}
+
+.btn-border {
+    border: 1px solid #000 !important;
+}
+
+/* Overlay must stay fixed */
+.modal.fade.show.d-block {
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+}
+
+/* Modal dialog positioning */
+.modal-dialog {
+  margin: 1.5rem auto;
+  max-width: 500px;
+}
+
+/* Modal content must be height-limited */
+.modal-content {
+  max-height: calc(100vh - 3rem);
+  display: flex;
+  flex-direction: column;
+}
+
+/* 🔥 THIS IS THE SCROLL FIX */
+.modal-body {
+  overflow-y: auto;
+  max-height: calc(100vh - 210px);
+}
+
+/* Keep header & footer fixed */
+.modal-header,
+.modal-footer {
+  flex-shrink: 0;
+}
+

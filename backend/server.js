@@ -106,6 +106,140 @@ app.put("/api/categories/:id", (req, res) => {
   });
 });
 
+// Get categories by type (expense / income)
+app.get("/api/categories", (req, res) => {
+  const { type } = req.query;
+
+  if (!type) {
+    return res.status(400).json({ message: "Category type is required" });
+  }
+
+  const sql = `
+    SELECT id, category_name, category_color
+    FROM categories
+    WHERE category_type = ?
+    ORDER BY id DESC
+  `;
+
+  db.query(sql, [type], (err, rows) => {
+    if (err) return res.status(500).json(err);
+    res.json(rows);
+  });
+});
+
+// Add transaction
+app.post("/api/transactions", (req, res) => {
+  const {
+    transactionType,
+    accountType,
+    categoryId,
+    amount,
+    description,
+    dateTime,
+  } = req.body;
+
+  // 🔐 Basic validation
+  if (!transactionType || !accountType || !categoryId || !amount || !dateTime) {
+    return res.status(400).json({
+      success: false,
+      message: "Required fields are missing",
+    });
+  }
+
+  // ❌ Block future date-time
+  if (new Date(dateTime) > new Date()) {
+    return res.status(400).json({
+      success: false,
+      message: "Future date & time not allowed",
+    });
+  }
+
+  const sql = `
+    INSERT INTO transactions
+    (transaction_type, account_type, category_id, amount, description, transaction_datetime)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+
+  db.query(
+    sql,
+    [
+      transactionType,
+      accountType,
+      categoryId,
+      amount,
+      description || null,
+      dateTime.replace("T", " "),
+    ],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({
+          success: false,
+          message: "Database error",
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "Transaction saved successfully",
+        id: result.insertId,
+      });
+    }
+  );
+});
+
+app.get("/api/transactions", (req, res) => {
+  const { month, year } = req.query;
+
+  if (!month || !year) {
+    return res.status(400).json({ message: "Month and year required" });
+  }
+
+  const sql = `
+    SELECT 
+      t.id,
+      t.transaction_type,
+      t.account_type,
+      t.amount,
+      t.description,
+      t.transaction_datetime,
+      DATE(t.transaction_datetime) as transaction_date,
+      c.category_name
+    FROM transactions t
+    JOIN categories c ON c.id = t.category_id
+    WHERE MONTH(t.transaction_datetime) = ?
+      AND YEAR(t.transaction_datetime) = ?
+    ORDER BY t.transaction_datetime DESC
+  `;
+
+  db.query(sql, [month, year], (err, rows) => {
+    if (err) return res.status(500).json(err);
+
+    // totals
+    let totalIncome = 0;
+    let totalExpense = 0;
+    let total = 0;
+
+    rows.forEach((r) => {
+      if (r.transaction_type === "income") {
+        totalIncome += Number(r.amount);
+      } else {
+        totalExpense += Number(r.amount);
+      }
+    });
+
+    total = Number(totalIncome) - Number(totalExpense);
+
+    res.json({
+      transactions: rows,
+      totalIncome,
+      totalExpense,
+      total,
+    });
+  });
+});
+
+
 app.listen(5000, () => {
   console.log("Server running on port 5000");
 });
