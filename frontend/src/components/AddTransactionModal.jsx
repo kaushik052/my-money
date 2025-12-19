@@ -13,8 +13,28 @@ const AddTransactionModal = ({ show, onClose, refreshData, type, editData }) => 
     const [description, setDescription] = useState("");
     const [dateTime, setDateTime] = useState("");
 
+    useEffect(() => {
+        if (editData) {
+            setTransactionType(editData.transaction_type);
+            setAccountType(editData.account_type);
+            setCategoryId(editData.category_id);
+            setAmount(editData.amount);
+            setDescription(editData.description || "");
+            setDateTime(editData.transaction_datetime.slice(0, 16));
+        }
+    }, [editData]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        const payload = {
+            TransactionType,
+            AccountType,
+            CategoryId,
+            amount,
+            description,
+            dateTime,
+        };
 
         // 🔐 Frontend validation
         if (!TransactionType || !AccountType || !CategoryId || !amount || !dateTime) {
@@ -29,28 +49,20 @@ const AddTransactionModal = ({ show, onClose, refreshData, type, editData }) => 
         }
 
         try {
-            const res = await axios.post("http://localhost:5000/api/transactions", {
-                transactionType: TransactionType,
-                accountType: AccountType,
-                categoryId: CategoryId,
-                amount: amount,
-                description: description,
-                dateTime: dateTime,
-            });
-
-            if (res.data.success) {
-                alert("Transaction added successfully");
-                refreshData(); // 🔥 THIS IS THE FIX
-                onClose();
-
-                // Optional: reset form
-                setTransactionType("");
-                setAccountType("");
-                setCategoryId("");
-                setAmount("");
-                setDescription("");
-                setDateTime(getLocalDateTimeISO());
+            if (editData) {
+                await axios.put(
+                    `http://localhost:5000/api/transactions/${editData.id}`,
+                    payload
+                );
+            } else {
+                await axios.post(
+                    "http://localhost:5000/api/transactions",
+                    payload
+                );
             }
+
+            refreshData();
+            onClose();
         } catch (err) {
             console.error(err);
             alert("Failed to save transaction");

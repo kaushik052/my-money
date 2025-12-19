@@ -188,11 +188,98 @@ app.post("/api/transactions", (req, res) => {
   );
 });
 
-app.get("/api/transactions", (req, res) => {
-  const { month, year } = req.query;
+// Update transaction
+app.put("/api/transactions/:id", (req, res) => {
+  const {
+    transactionType,
+    accountType,
+    categoryId,
+    amount,
+    description,
+    dateTime,
+  } = req.body;
 
-  if (!month || !year) {
-    return res.status(400).json({ message: "Month and year required" });
+  if (!transactionType || !accountType || !categoryId || !amount || !dateTime) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing required fields",
+    });
+  }
+
+  // ❌ Block future date-time
+  if (new Date(dateTime) > new Date()) {
+    return res.status(400).json({
+      success: false,
+      message: "Future date & time not allowed",
+    });
+  }
+
+  const sql = `
+    UPDATE transactions SET
+      transaction_type = ?,
+      account_type = ?,
+      category_id = ?,
+      amount = ?,
+      description = ?,
+      transaction_datetime = ?
+    WHERE id = ?
+  `;
+
+  db.query(
+    sql,
+    [
+      transactionType,
+      accountType,
+      categoryId,
+      amount,
+      description || null,
+      dateTime,
+      req.params.id,
+    ],
+    (err) => {
+      if (err) return res.status(500).json(err);
+
+      res.json({
+        success: true,
+        message: "Transaction updated successfully",
+      });
+    }
+  );
+});
+
+// Delete transaction
+app.delete("/api/transactions/:id", (req, res) => {
+  const sql = "DELETE FROM transactions WHERE id = ?";
+
+  db.query(sql, [req.params.id], (err) => {
+    if (err) return res.status(500).json(err);
+
+    res.json({
+      success: true,
+      message: "Transaction deleted successfully",
+    });
+  });
+});
+
+
+// Display all data
+app.get("/api/transactions", (req, res) => {
+  let { fromDate, toDate, preset } = req.query;
+
+  const now = new Date();
+
+  const formatMySQL = (date) =>
+    date.toISOString().split("T")[0] + " 00:00:00";
+
+  const formatMySQLEnd = (date) =>
+    date.toISOString().split("T")[0] + " 23:59:59";
+
+  if (!fromDate || !toDate) {
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    fromDate = formatMySQL(firstDay);
+    toDate = formatMySQLEnd(lastDay);
   }
 
   const sql = `
@@ -207,37 +294,33 @@ app.get("/api/transactions", (req, res) => {
       c.category_name
     FROM transactions t
     JOIN categories c ON c.id = t.category_id
-    WHERE MONTH(t.transaction_datetime) = ?
-      AND YEAR(t.transaction_datetime) = ?
+    WHERE t.transaction_datetime BETWEEN ? AND ?
     ORDER BY t.transaction_datetime DESC
   `;
 
-  db.query(sql, [month, year], (err, rows) => {
+  db.query(sql, [fromDate, toDate], (err, rows) => {
     if (err) return res.status(500).json(err);
 
-    // totals
     let totalIncome = 0;
     let totalExpense = 0;
-    let total = 0;
 
     rows.forEach((r) => {
-      if (r.transaction_type === "income") {
-        totalIncome += Number(r.amount);
-      } else {
-        totalExpense += Number(r.amount);
-      }
+      r.transaction_type === "income"
+        ? (totalIncome += Number(r.amount))
+        : (totalExpense += Number(r.amount));
     });
-
-    total = Number(totalIncome) - Number(totalExpense);
 
     res.json({
       transactions: rows,
       totalIncome,
       totalExpense,
-      total,
+      total: totalIncome - totalExpense,
+      fromDate,
+      toDate,
     });
   });
 });
+
 
 
 app.listen(5000, () => {
