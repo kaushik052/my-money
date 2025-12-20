@@ -130,16 +130,16 @@ app.get("/api/categories", (req, res) => {
 // Add transaction
 app.post("/api/transactions", (req, res) => {
   const {
-    transactionType,
-    accountType,
-    categoryId,
+    TransactionType,
+    AccountType,
+    CategoryId,
     amount,
     description,
     dateTime,
   } = req.body;
 
   // 🔐 Basic validation
-  if (!transactionType || !accountType || !categoryId || !amount || !dateTime) {
+  if (!TransactionType || !AccountType || !CategoryId || !amount || !dateTime) {
     return res.status(400).json({
       success: false,
       message: "Required fields are missing",
@@ -163,9 +163,9 @@ app.post("/api/transactions", (req, res) => {
   db.query(
     sql,
     [
-      transactionType,
-      accountType,
-      categoryId,
+      TransactionType,
+      AccountType,
+      CategoryId,
       amount,
       description || null,
       dateTime.replace("T", " "),
@@ -191,15 +191,15 @@ app.post("/api/transactions", (req, res) => {
 // Update transaction
 app.put("/api/transactions/:id", (req, res) => {
   const {
-    transactionType,
-    accountType,
-    categoryId,
+    TransactionType,
+    AccountType,
+    CategoryId,
     amount,
     description,
     dateTime,
   } = req.body;
 
-  if (!transactionType || !accountType || !categoryId || !amount || !dateTime) {
+  if (!TransactionType || !AccountType || !CategoryId || !amount || !dateTime) {
     return res.status(400).json({
       success: false,
       message: "Missing required fields",
@@ -228,9 +228,9 @@ app.put("/api/transactions/:id", (req, res) => {
   db.query(
     sql,
     [
-      transactionType,
-      accountType,
-      categoryId,
+      TransactionType,
+      AccountType,
+      CategoryId,
       amount,
       description || null,
       dateTime,
@@ -291,6 +291,7 @@ app.get("/api/transactions", (req, res) => {
       t.description,
       t.transaction_datetime,
       DATE(t.transaction_datetime) as transaction_date,
+      t.category_id,
       c.category_name
     FROM transactions t
     JOIN categories c ON c.id = t.category_id

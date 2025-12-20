@@ -21,12 +21,15 @@ const AddCategoryModal = ({ show, onClose, type, editData }) => {
           `http://localhost:5000/api/categories/${editData.id}`,
           { name: categoryName }
         );
+        alert("New category added successfully.");
       } else {
         // CREATE
         await axios.post("http://localhost:5000/api/categories", {
           name: categoryName,
           type,
         });
+        setCategoryName("");
+        alert("New category added successfully.");
       }
 
       onClose();

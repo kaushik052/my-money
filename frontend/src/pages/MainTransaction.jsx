@@ -143,7 +143,7 @@ const MainTransaction = () => {
                       <div className="col-md-3">
                         <label>From Date</label>
                         <input
-                          type="date"
+                          type="date-local"
                           className="form-control"
                           value={fromDate}
                           onChange={(e) => {
@@ -156,7 +156,7 @@ const MainTransaction = () => {
                       <div className="col-md-3">
                         <label>To Date</label>
                         <input
-                          type="date"
+                          type="date-local"
                           className="form-control"
                           value={toDate}
                           onChange={(e) => {
@@ -275,7 +275,7 @@ const MainTransaction = () => {
 
                                     <td>
                                       <button
-                                        className="btn btn-sm btn-primary"
+                                        className="btn btn-sm btn-primary mr-2"
                                         onClick={() => setViewData(t)}
                                       >
                                         View
@@ -326,7 +326,7 @@ const MainTransaction = () => {
                 <p><b>Description:</b> {viewData.description || "N/A"}</p>
                 <p>
                   <b>Date:</b>{" "}
-                  {new Date(viewData.transaction_datetime).toLocaleString()}
+                  {new Date(viewData.transaction_datetime).toLocaleString("en-GB").replace(/\//g, "-")}
                 </p>
               </div>
             </div>

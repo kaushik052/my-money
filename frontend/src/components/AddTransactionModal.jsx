@@ -13,16 +13,40 @@ const AddTransactionModal = ({ show, onClose, refreshData, type, editData }) => 
     const [description, setDescription] = useState("");
     const [dateTime, setDateTime] = useState("");
 
+    const formatForDateTimeLocal = (dateString) => {
+        const date = new Date(dateString);
+        const offset = date.getTimezoneOffset(); // minutes
+        const localDate = new Date(date.getTime() - offset * 60000);
+        return localDate.toISOString().slice(0, 16);
+    };
+
     useEffect(() => {
         if (editData) {
             setTransactionType(editData.transaction_type);
             setAccountType(editData.account_type);
-            setCategoryId(editData.category_id);
+            setCategoryId(String(editData.category_id));
             setAmount(editData.amount);
             setDescription(editData.description || "");
-            setDateTime(editData.transaction_datetime.slice(0, 16));
+            setDateTime(
+            editData.transaction_datetime
+                ? formatForDateTimeLocal(editData.transaction_datetime)
+                : ""
+            );
+        }else{
+            setTransactionType("");
+            setAccountType("");
+            setCategoryId("");
+            setAmount("");
+            setDescription("");
+            setDateTime(formatForDateTimeLocal(new Date()));
         }
     }, [editData]);
+
+    useEffect(() => {
+        if (editData && Categories.length) {
+            setCategoryId(String(editData.category_id));
+        }
+    }, [editData, Categories]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -54,18 +78,28 @@ const AddTransactionModal = ({ show, onClose, refreshData, type, editData }) => 
                     `http://localhost:5000/api/transactions/${editData.id}`,
                     payload
                 );
+
+                alert("Transaction updated successfully.");
             } else {
                 await axios.post(
                     "http://localhost:5000/api/transactions",
                     payload
                 );
+
+                setTransactionType("");
+                setAccountType("");
+                setCategoryId("");
+                setAmount("");
+                setDescription("");
+                setDateTime(new Date().toISOString().slice(0, 16));
+
+                alert("A new transaction addedd successfully.");
             }
 
             refreshData();
             onClose();
         } catch (err) {
-            console.error(err);
-            alert("Failed to save transaction");
+            alert(err);
         }
 
     };
@@ -123,11 +157,11 @@ const AddTransactionModal = ({ show, onClose, refreshData, type, editData }) => 
     };
 
     useEffect(() => {
-        if (show) {
+        if (show && !editData) {
             setDateTime(getLocalDateTimeISO());
         }
-    }, [show]);
-
+    }, [show, editData]);
+    
     if (!show) return null;
 
     return (
@@ -180,7 +214,7 @@ const AddTransactionModal = ({ show, onClose, refreshData, type, editData }) => 
                                     <select
                                         className="form-control"
                                         value={CategoryId}
-                                        onChange={(e) => setCategoryId(e.target.value)}
+                                        onChange={(e) => setCategoryId(Number(e.target.value))}
                                         disabled={!TransactionType}
                                     >
                                         <option value="">Select Category</option>
